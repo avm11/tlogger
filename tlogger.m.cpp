@@ -33,10 +33,14 @@ int main(int argc, char* argv[]) {
     subscriber.subscribe(
         std::bind(&CsvTickerProcessor::handleTickerMessage, &processor, _1));
 
-    processor.start();
+    int rc = processor.start();
+    if (rc) {
+        LOG(ERROR) << "Failed to start ticker processor";
+        return -1;
+    }
 
     const auto uri = COINBASE_MARKETDATA_URI;
-    int rc = subscriber.connect(uri);
+    rc = subscriber.connect(uri);
     if (rc) {
         LOG(ERROR) << "Failed to connect to " << uri;
         return -1;
