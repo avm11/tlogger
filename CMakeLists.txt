@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(SRC_FILES
     src/coinbasetickersubscriber.cpp
+    src/csvtickerprocessor.cpp
     tlogger.m.cpp
 )
 

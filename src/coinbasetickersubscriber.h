@@ -34,7 +34,7 @@ private:
 
 public:
     // CREATORS
-    // Create Feed object.
+    // Create CoinbaseTickerSubscriber object.
     explicit CoinbaseTickerSubscriber(std::string ticker);
 
     // Delete this object.
@@ -54,6 +54,7 @@ public:
     int connect(const std::string& uri);
 
 private:
+    // PRIVATE MANIPULATORS
     ContextPtr handleTLSInit(websocketpp::connection_hdl);
 
     void handleOpen(websocketpp::connection_hdl hdl);
