@@ -126,7 +126,10 @@ void CoinbaseTickerSubscriber::handleClose(websocketpp::connection_hdl hdl) {
 }
 
 void CoinbaseTickerSubscriber::handleMessage(websocketpp::connection_hdl, MessagePtr msg) {
-    std::cout << msg->get_payload() << "\n";
+    const auto& payload = msg->get_payload();
+    for (auto& subscriber : m_subscribers) {
+        subscriber(payload);
+    }
 }
 
 }

@@ -23,7 +23,11 @@ int main(int argc, char* argv[]) {
 
     CoinbaseTickerSubscriber subscriber{ticker};
 
-    const auto uri = COINBASE_MARKETDATA_SANDBOX_URI;
+    subscriber.subscribe([](const std::string& payload){
+        std::cout << payload << "\n";
+    });
+
+    const auto uri = COINBASE_MARKETDATA_URI;
     int rc = subscriber.connect(uri);
     if (rc) {
         LOG(ERROR) << "Failed to connect to " << uri;
