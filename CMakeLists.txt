@@ -12,6 +12,7 @@ set(SRC_FILES
 find_package(Boost REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(websocketpp REQUIRED)
+find_package(glog REQUIRED)
 
 
 include_directories(
@@ -21,4 +22,4 @@ include_directories(
     ${OpenSSL_INCLUDE_DIRS})
 
 add_executable(${PROJECT_NAME} ${SRC_FILES})
-target_link_libraries(${PROJECT_NAME} openssl::openssl pthread)
+target_link_libraries(${PROJECT_NAME} openssl::openssl glog::glog pthread)

@@ -1,5 +1,6 @@
 [requires]
 websocketpp/0.8.2
+glog/0.6.0
 
 [generators]
 CMakeDeps

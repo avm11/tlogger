@@ -1,3 +1,6 @@
+#ifndef COINBASE_TICKER_SUBSCRIBER
+#define COINBASE_TICKER_SUBSCRIBER
+
 #include <string>
 
 #include <websocketpp/config/asio_client.hpp>
@@ -54,5 +57,6 @@ private:
     void handleMessage(websocketpp::connection_hdl, MessagePtr msg);
 };
 
-
 }
+
+#endif  // COINBASE_TICKER_SUBSCRIBER

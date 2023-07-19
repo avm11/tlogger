@@ -2,14 +2,17 @@
 
 #include <iostream>
 
+#include <glog/logging.h>
+
 namespace tlogger {
 
 CoinbaseTickerSubscriber::CoinbaseTickerSubscriber(std::string ticker)
 : m_ticker(std::move(ticker))
 {
-    m_client.set_access_channels(websocketpp::log::alevel::all);
-    m_client.clear_access_channels(websocketpp::log::alevel::frame_payload);
-    m_client.set_error_channels(websocketpp::log::elevel::all);
+    m_client.clear_access_channels(websocketpp::log::alevel::all);
+//    m_client.clear_access_channels(websocketpp::log::alevel::frame_payload);
+    m_client.clear_error_channels(websocketpp::log::elevel::all);
+
 
     m_client.init_asio();
     m_client.start_perpetual();
@@ -25,7 +28,7 @@ CoinbaseTickerSubscriber::~CoinbaseTickerSubscriber()
         websocketpp::lib::error_code ec;
         m_client.close(m_hdl, websocketpp::close::status::going_away, "", ec);
         if (ec) {
-            std::cout << "> Error closing connection " << ec.message() << std::endl;
+            LOG(ERROR) << "Error closing connection " << ec.message();
         }
     }
         
@@ -35,7 +38,7 @@ CoinbaseTickerSubscriber::~CoinbaseTickerSubscriber()
 int CoinbaseTickerSubscriber::connect(const std::string& uri) {
     websocketpp::lib::error_code ec;
 
-    std::cout << "Create connection\n";
+    LOG(INFO) << "Create connection to " << uri;
 
     m_client.set_tls_init_handler([this](websocketpp::connection_hdl hdl) -> ContextPtr {
         return handleTLSInit(hdl);
@@ -44,7 +47,7 @@ int CoinbaseTickerSubscriber::connect(const std::string& uri) {
     WebsocketppClient::connection_ptr con = m_client.get_connection(uri, ec);
 
     if (ec) {
-        std::cout << "> Connect initialization error: " << ec.message() << std::endl;
+        LOG(ERROR) << "Connect initialization error: " << ec.message();
         return -1;
     }
 
@@ -69,7 +72,7 @@ int CoinbaseTickerSubscriber::connect(const std::string& uri) {
 }
 
 ContextPtr CoinbaseTickerSubscriber::handleTLSInit(websocketpp::connection_hdl) {
-    std::cout << "TLS Init\n";
+    LOG(INFO) << "TLS Initialization";
 
     auto ctx = websocketpp::lib::make_shared<boost::asio::ssl::context>(boost::asio::ssl::context::sslv23);
 
@@ -82,7 +85,7 @@ ContextPtr CoinbaseTickerSubscriber::handleTLSInit(websocketpp::connection_hdl) 
 
         ctx->set_verify_mode(boost::asio::ssl::verify_none);
     } catch (std::exception& e) {
-        std::cout << e.what() << std::endl;
+        LOG(ERROR) << "TLS Initialization failed: " << e.what();
     }
     return ctx;
 }
@@ -91,19 +94,19 @@ void CoinbaseTickerSubscriber::handleOpen(websocketpp::connection_hdl hdl) {
     WebsocketppClient::connection_ptr con = m_client.get_con_from_hdl(hdl);
     auto server = con->get_response_header("Server");
 
-    std::cout << "Connection opened to " << server << "\n";
+    LOG(INFO) << "Connection opened to " << server;
 
     std::string request = R"json({
     "type": "subscribe",
     "product_ids": [ ")json" + m_ticker + R"json(" ],
     "channels": ["ticker"]
     })json";
-    std::cout << "Subscribing on " << m_ticker << "\n";
+    LOG(INFO) << "Subscribing on " << m_ticker;
 
     websocketpp::lib::error_code ec;
     m_client.send(m_hdl, request, websocketpp::frame::opcode::text, ec);
     if (ec) {
-        std::cout << "Subscribing error: " << ec.message() << "\n";
+        LOG(ERROR) << "Subscribing error: " << ec.message();
     }
 }
 
@@ -112,12 +115,12 @@ void CoinbaseTickerSubscriber::handleFail(websocketpp::connection_hdl hdl) {
     auto server = con->get_response_header("Server");
     auto error_reason = con->get_ec().message();
 
-    std::cout << "Connection failed to " << server << " : " << error_reason << "\n";
+    LOG(ERROR) << "Connection failed to " << server << " : " << error_reason;
 }
 
 void CoinbaseTickerSubscriber::handleClose(websocketpp::connection_hdl hdl) {
      WebsocketppClient::connection_ptr con = m_client.get_con_from_hdl(hdl);
-     std::cout << "Connection closed: close code: " << con->get_remote_close_code() << " (" 
+     LOG(INFO) << "Connection closed: close code: " << con->get_remote_close_code() << " (" 
           << websocketpp::close::status::get_string(con->get_remote_close_code()) 
           << "), close reason: " << con->get_remote_close_reason();
 }
