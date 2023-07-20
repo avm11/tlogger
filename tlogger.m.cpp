@@ -1,6 +1,10 @@
-#include <iostream>
+#include <atomic>
+#include <chrono>
 #include <cstdio>
 #include <functional>
+#include <iostream>
+#include <thread>
+#include <signal.h>
 
 #include <glog/logging.h>
 
@@ -16,9 +20,17 @@ const std::string COINBASE_MARKETDATA_SANDBOX_URI = "wss://ws-feed-public.sandbo
 
 const std::string DEFAULT_CSV_FILE_NAME = "data.csv";
 
+static std::atomic<bool> exitFlag{false};
+
+void signalHandler(int s) {
+    LOG(INFO) << "Terminate signal received: " << s;
+    exitFlag.store(true);
+}
+
 
 int main(int argc, char* argv[]) {
     using namespace std::placeholders;
+    using namespace std::chrono_literals;
 
     FLAGS_logtostderr = true;
     FLAGS_stderrthreshold = 0;
@@ -46,7 +58,18 @@ int main(int argc, char* argv[]) {
         return -1;
     }
 
-    std::getchar();
+    LOG(INFO) << "Press Ctrl+C to stop";
+    struct sigaction sigIntHandler;
+
+    sigIntHandler.sa_handler = signalHandler;
+    sigemptyset(&sigIntHandler.sa_mask);
+    sigIntHandler.sa_flags = 0;
+
+    sigaction(SIGINT, &sigIntHandler, NULL);
+
+    while (!exitFlag.load()) {
+        std::this_thread::sleep_for(1s);
+    }
 
     processor.stop();
 
