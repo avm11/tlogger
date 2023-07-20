@@ -11,6 +11,14 @@ namespace tlogger {
 
 constexpr size_t MESSAGE_QUEUE_SIZE = 256;
 
+enum TickerParserState {
+    TPS_WaitingForJsonStart,
+    TPS_WaitingForFieldSeparator,
+    TPS_ProcessingFieldValue,
+    TPS_ProcessingDone,
+    TPS_ProcessingError,
+};
+
 CsvTickerProcessor::CsvTickerProcessor(const std::string& csvFileName)
 :m_csvFileStream{csvFileName, std::ios_base::app}
 ,m_stopThread{false}
@@ -53,9 +61,9 @@ void CsvTickerProcessor::handleTickerMessage(const std::string& payload)
 
 void CsvTickerProcessor::run()
 {
-    while (!m_stopThread.load(std::memory_order_relaxed)) {
-        std::string payload;
+    std::string payload;
 
+    while (!m_stopThread.load(std::memory_order_relaxed)) {
         {
             std::unique_lock<std::mutex> lock{m_msgQueueMutex};
             if (!m_msgQueueCond.wait_for(
@@ -67,8 +75,66 @@ void CsvTickerProcessor::run()
             m_messageQueue.pop();
         }
 
-        std::cout << payload << "\n";
+        processTickerMessage(payload);
     }
+}
+
+void CsvTickerProcessor::processTickerMessage(const std::string& payload)
+{
+    if (payload.find(R"("type":"ticker")") == std::string::npos) {
+        return;
+    }
+
+    std::string csv_row;
+    csv_row.reserve(payload.size());
+
+    TickerParserState state = TPS_WaitingForJsonStart;
+    for (char c: payload) {
+        switch (state)
+        {
+            case TPS_WaitingForJsonStart: {
+                if (c == '{') {
+                    state = TPS_WaitingForFieldSeparator;
+                }
+                else {
+                    state = TPS_ProcessingError;
+                }
+            } break;
+            case TPS_WaitingForFieldSeparator: {
+                if (c == '}') {
+                    state = TPS_ProcessingDone;
+                } else if (c == ':') {
+                    state = TPS_ProcessingFieldValue;
+                }
+            } break;
+            case TPS_ProcessingFieldValue: {
+                if (c == '}') {
+                    state = TPS_ProcessingDone;
+                } else if (c == ',') {
+                    csv_row.push_back(c);
+                    state = TPS_WaitingForFieldSeparator;
+                } else {
+                    csv_row.push_back(c);
+                }
+            } break;
+            case TPS_ProcessingDone: {
+                state = TPS_ProcessingError;
+            } break;
+            case TPS_ProcessingError: {
+            } break;
+        }
+
+        if (state == TPS_ProcessingError) {
+            break;
+        }
+    }
+
+    if (state != TPS_ProcessingDone) {
+        LOG(ERROR) << "Failed to parse JSON: " << payload;
+        return;
+    }
+
+    m_csvFileStream << csv_row << "\n";
 }
 
 

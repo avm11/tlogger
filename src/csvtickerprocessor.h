@@ -51,6 +51,8 @@ public:
 private:
     // PRIVATE MANIPULATORS
     void run();
+
+    void processTickerMessage(const std::string& payload);
 };
 
 }
