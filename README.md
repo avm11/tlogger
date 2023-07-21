@@ -11,3 +11,11 @@ conan install . --output-folder=build --build=missing
 cd build
 cmake --build .
 ```
+
+## How to run
+
+```sh
+.\tlogger BTC-USD ETH-USD --output-file ticker.csv
+```
+
+See `.\tglogger --help` for details.
