@@ -17,6 +17,7 @@ class CsvTickerProcessor {
 private:
     // DATA
     std::ofstream m_csvFileStream;
+    std::string   m_csvRowBuffer;
 
     std::thread m_processingThread;
 

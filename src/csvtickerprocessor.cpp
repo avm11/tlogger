@@ -9,7 +9,7 @@ using namespace std::chrono_literals;
 
 namespace tlogger {
 
-constexpr size_t MESSAGE_QUEUE_SIZE = 256;
+namespace {
 
 enum TickerParserState {
     TPS_WaitingForJsonStart,
@@ -18,6 +18,61 @@ enum TickerParserState {
     TPS_ProcessingDone,
     TPS_ProcessingError,
 };
+
+int tickerJsonToCsv(const std::string& jsonMessage, std::string& csvRow) 
+{
+    csvRow.clear();
+    csvRow.reserve(jsonMessage.size());    
+
+    TickerParserState state = TPS_WaitingForJsonStart;
+    for (char c: jsonMessage) {
+        switch (state)
+        {
+            case TPS_WaitingForJsonStart: {
+                if (c == '{') {
+                    state = TPS_WaitingForFieldSeparator;
+                }
+                else {
+                    state = TPS_ProcessingError;
+                }
+            } break;
+            case TPS_WaitingForFieldSeparator: {
+                if (c == '}') {
+                    state = TPS_ProcessingDone;
+                } else if (c == ':') {
+                    state = TPS_ProcessingFieldValue;
+                }
+            } break;
+            case TPS_ProcessingFieldValue: {
+                if (c == '}') {
+                    state = TPS_ProcessingDone;
+                } else if (c == ',') {
+                    csvRow.push_back(c);
+                    state = TPS_WaitingForFieldSeparator;
+                } else {
+                    csvRow.push_back(c);
+                }
+            } break;
+            case TPS_ProcessingDone: {
+                state = TPS_ProcessingError;
+            } break;
+            case TPS_ProcessingError: {
+            } break;
+        }
+
+        if (state == TPS_ProcessingError) {
+            break;
+        }
+    }
+
+    if (state != TPS_ProcessingDone) {
+        return 1;
+    }
+
+    return 0;
+}
+
+}
 
 CsvTickerProcessor::CsvTickerProcessor(const std::string& csvFileName)
 :m_csvFileStream{csvFileName, std::ios_base::app}
@@ -85,56 +140,14 @@ void CsvTickerProcessor::processTickerMessage(const std::string& payload)
         return;
     }
 
-    std::string csv_row;
-    csv_row.reserve(payload.size());
+    int rc = tickerJsonToCsv(payload, m_csvRowBuffer);
 
-    TickerParserState state = TPS_WaitingForJsonStart;
-    for (char c: payload) {
-        switch (state)
-        {
-            case TPS_WaitingForJsonStart: {
-                if (c == '{') {
-                    state = TPS_WaitingForFieldSeparator;
-                }
-                else {
-                    state = TPS_ProcessingError;
-                }
-            } break;
-            case TPS_WaitingForFieldSeparator: {
-                if (c == '}') {
-                    state = TPS_ProcessingDone;
-                } else if (c == ':') {
-                    state = TPS_ProcessingFieldValue;
-                }
-            } break;
-            case TPS_ProcessingFieldValue: {
-                if (c == '}') {
-                    state = TPS_ProcessingDone;
-                } else if (c == ',') {
-                    csv_row.push_back(c);
-                    state = TPS_WaitingForFieldSeparator;
-                } else {
-                    csv_row.push_back(c);
-                }
-            } break;
-            case TPS_ProcessingDone: {
-                state = TPS_ProcessingError;
-            } break;
-            case TPS_ProcessingError: {
-            } break;
-        }
-
-        if (state == TPS_ProcessingError) {
-            break;
-        }
-    }
-
-    if (state != TPS_ProcessingDone) {
+    if (rc) {
         LOG(ERROR) << "Failed to parse JSON: " << payload;
         return;
     }
 
-    m_csvFileStream << csv_row << "\n";
+    m_csvFileStream << m_csvRowBuffer << "\n";
 }
 
 
