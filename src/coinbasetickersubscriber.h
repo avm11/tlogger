@@ -3,6 +3,7 @@
 
 #include <string>
 #include <functional>
+#include <vector>
 
 #include <websocketpp/config/asio_client.hpp>
 #include <websocketpp/client.hpp>
@@ -24,7 +25,7 @@ public:
 
 private:
     // DATA
-    std::string m_ticker;  // ticker to subscribe
+    std::vector<std::string> m_tickers;  // tickers to subscribe
 
     WebsocketppClient m_client;
     websocketpp::connection_hdl m_hdl;
@@ -35,7 +36,7 @@ private:
 public:
     // CREATORS
     // Create CoinbaseTickerSubscriber object.
-    explicit CoinbaseTickerSubscriber(std::string ticker);
+    explicit CoinbaseTickerSubscriber(std::vector<std::string> tickers);
 
     // Delete this object.
     ~CoinbaseTickerSubscriber();

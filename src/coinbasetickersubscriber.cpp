@@ -2,12 +2,13 @@
 
 #include <iostream>
 
+#include <boost/algorithm/string/join.hpp>
 #include <glog/logging.h>
 
 namespace tlogger {
 
-CoinbaseTickerSubscriber::CoinbaseTickerSubscriber(std::string ticker)
-: m_ticker(std::move(ticker))
+CoinbaseTickerSubscriber::CoinbaseTickerSubscriber(std::vector<std::string> tickers)
+: m_tickers(std::move(tickers))
 {
     m_client.clear_access_channels(websocketpp::log::alevel::all);
 //    m_client.clear_access_channels(websocketpp::log::alevel::frame_payload);
@@ -96,12 +97,13 @@ void CoinbaseTickerSubscriber::handleOpen(websocketpp::connection_hdl hdl) {
 
     LOG(INFO) << "Connection opened to " << server;
 
+    std::string tickersStr = "\"" + boost::algorithm::join(m_tickers, "\",\"") + "\"";
     std::string request = R"json({
     "type": "subscribe",
-    "product_ids": [ ")json" + m_ticker + R"json(" ],
+    "product_ids": [ )json" + tickersStr + R"json( ],
     "channels": ["ticker"]
     })json";
-    LOG(INFO) << "Subscribing on " << m_ticker;
+    LOG(INFO) << "Subscribing on " << tickersStr;
 
     websocketpp::lib::error_code ec;
     m_client.send(m_hdl, request, websocketpp::frame::opcode::text, ec);
