@@ -137,6 +137,9 @@ void CsvTickerProcessor::run()
 void CsvTickerProcessor::processTickerMessage(const std::string& payload)
 {
     if (payload.find(R"("type":"ticker")") == std::string::npos) {
+        if (payload.find(R"("type":"error")") != std::string::npos) {
+            LOG(ERROR) << "Error message received: " << payload << "\n";
+        }
         return;
     }
 
