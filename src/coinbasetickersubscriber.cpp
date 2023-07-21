@@ -127,8 +127,8 @@ void CoinbaseTickerSubscriber::handleClose(websocketpp::connection_hdl hdl) {
           << "), close reason: " << con->get_remote_close_reason();
 }
 
-void CoinbaseTickerSubscriber::handleMessage(websocketpp::connection_hdl, MessagePtr msg) {
-    const auto& payload = msg->get_payload();
+void CoinbaseTickerSubscriber::handleMessage(websocketpp::connection_hdl, MessagePtr message) {
+    const auto& payload = message->get_payload();
     for (auto& subscriber : m_subscribers) {
         subscriber(payload);
     }
