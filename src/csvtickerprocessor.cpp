@@ -11,6 +11,7 @@ namespace tlogger {
 
 namespace {
 
+// Json parsing state enumeration
 enum TickerParserState {
     TPS_WaitingForJsonStart,
     TPS_WaitingForFieldSeparator,
@@ -19,6 +20,9 @@ enum TickerParserState {
     TPS_ProcessingError,
 };
 
+// Convert the specified 'jsonMessage' to the specified 'csvRow'. Return 0
+// if the json message was parsed succesfully. Otherwise return non zero error
+// code.
 int tickerJsonToCsv(const std::string& jsonMessage, std::string& csvRow) 
 {
     csvRow.clear();

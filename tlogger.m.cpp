@@ -24,14 +24,16 @@ const std::string COINBASE_MARKETDATA_SANDBOX_URI = "wss://ws-feed-public.sandbo
 
 const std::string DEFAULT_CSV_FILE_NAME = "data.csv";
 
-static std::atomic<bool> exitFlag{false};
+static std::atomic<bool> exitFlag{false};  // the application exit flag
 
+// Process signal handler. Set the 'exitFlag' on signal received event.
 void signalHandler(int s) 
 {
     LOG(INFO) << "Terminate signal received: " << s;
     exitFlag.store(true);
 }
 
+// Make command line options description object for the application
 po::options_description makeCommandLineOptions() 
 {
     po::options_description desc{"Program arguments:"};
@@ -46,6 +48,9 @@ po::options_description makeCommandLineOptions()
     return desc;
 }
 
+// Parse command line arguments passed as the specified 'argc' and 'argv' variables,
+// using the specified command line option description 'desc' object. Return a
+// variables map object with parsed comand line parameters.
 po::variables_map parseCommandLine(int argc, char* argv[], const po::options_description& desc) 
 {
     po::variables_map cmdVars;
@@ -58,7 +63,7 @@ po::variables_map parseCommandLine(int argc, char* argv[], const po::options_des
     return cmdVars;
 }
 
-
+// The application entry point.
 int main(int argc, char* argv[]) {
     using namespace std::placeholders;
     using namespace std::chrono_literals;
