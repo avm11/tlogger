@@ -1,7 +1,5 @@
 #include <coinbasetickersubscriber.h>
 
-#include <iostream>
-
 #include <boost/algorithm/string/join.hpp>
 #include <glog/logging.h>
 
