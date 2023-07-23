@@ -3,8 +3,9 @@
 
 #include <websocketclient.h>
 
-#include <string>
 #include <functional>
+#include <mutex>
+#include <string>
 #include <vector>
 
 #include <websocketpp/config/asio_client.hpp>
@@ -29,6 +30,7 @@ private:
     std::vector<std::string> m_tickers;  // tickers to subscribe
 
     std::vector<MessageHandler> m_subscribers;  // ticker message subscribers
+    std::mutex m_subscribersLock;  // guard for ticker subscribers list
 
 public:
     // CREATORS
@@ -51,8 +53,6 @@ public:
 
     // Add the specified 'handler' to the ticker events subscription list.
     // The 'Func'type should be convertable to the 'MessageHandler' class.
-    // This method is not a thread safe, the behaviour is undefined if
-    // the `subscribe` is called after the `connect` call.
     template<typename Func>
     void subscribe(Func handler);
 
@@ -79,6 +79,7 @@ public:
 
 template<typename Func>
 void CoinbaseTickerSubscriber::subscribe(Func handler) {
+    std::lock_guard<std::mutex> guard{m_subscribersLock};
     m_subscribers.emplace_back(handler);
 }
 

@@ -55,6 +55,8 @@ void CoinbaseTickerSubscriber::handleClose(websocketpp::connection_hdl hdl) {
 
 void CoinbaseTickerSubscriber::handleMessage(websocketpp::connection_hdl, MessagePtr message) {
     const auto& payload = message->get_payload();
+
+    std::lock_guard<std::mutex> guard{m_subscribersLock};
     for (auto& subscriber : m_subscribers) {
         subscriber(payload);
     }
